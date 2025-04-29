@@ -69,6 +69,27 @@ async def chat_completions(
     request: Request,
     mcp_handler: GeminiMCPHandler = Depends(get_mcp_handler)
 ):
+    """Handle chat completions with MCP"""
+    try:
+        # Parse request body
+        body = await request.json()
+        # Convert to MCP Request format
+        mcp_request = await _convert_to_mcp_request(body)
+        # Handle streaming vs non-streaming
+        stream = body.get("stream", False)
+        if stream:
+            # Return streaming response
+            return StreamingResponse(
+                _stream_mcp_response(mcp_handler, mcp_request),
+                media_type="text/event-stream"
+            )
+        else:
+            # Return complete response
+            response = await _get_complete_response(mcp_handler, mcp_request)
+            return response
+    except Exception as e:
+        logger.error(f"Error in chat completions: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
 
 @router.post("/models/{model_id}/chat")
 async def chat_completions_model(
