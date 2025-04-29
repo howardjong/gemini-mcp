@@ -1,0 +1,129 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# C extensions
+*.so
+*.dylib
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# mypy
+.mypy_cache/
+.dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Local credentials and secrets
+.env
+*.env
+credentials/
+
+# Virtual environments
+venv/
+ENV/
+.venv/
+
+# Large data files
+*.pkl
+*.h5
+*.csv
+*.tsv
+*.npz
+*.parquet
+*.feather
+*.lfs
+*.lfs.*
+*.zip
+*.tar.gz
+*.tar
+*.gz
+*.log
+
+# Ignore all site-packages
+**/site-packages/
+
+# MacOS
+.DS_Store
+
+# Ignore all wheel files
+*.whl
+
+# Ignore all log files
+*.log
+
+# Ignore all test data
+*.testdata
+
+# Ignore Python egg files
+*.egg
+*.egg-info/
+
+# Ignore compiled object files
+*.o
+*.obj
+*.dll
+*.a
+*.lib
+*.pyc
+
+# Ignore Arrow and other large binary libs
+*.arrow
+*.parquet
+*.orc
+*.avro
+*.snappy
+
+# Ignore notebook checkpoints
+.ipynb_checkpoints/
