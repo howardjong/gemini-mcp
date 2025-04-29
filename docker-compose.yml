@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - GCP_REGION=${GCP_REGION}
+      - GCP_SERVICE_ACCOUNT_KEY=${GCP_SERVICE_ACCOUNT_KEY}
+      - VERTEX_MODEL_NAME=${VERTEX_MODEL_NAME}
+      - PORT=8000
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - ENABLE_RATE_LIMITING=true
+      - RATE_LIMIT_RPM=150
+    volumes:
+      - ./app:/app/app
+      - ./credentials:/app/credentials
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
