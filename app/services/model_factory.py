@@ -23,7 +23,9 @@ class ModelFactory:
             kwargs.setdefault("project_id", settings.GCP_PROJECT_ID)
             kwargs.setdefault("region", settings.GCP_REGION)
             kwargs.setdefault("model_name", settings.VERTEX_MODEL_NAME)
-            
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"ModelFactory: Using model_name={kwargs.get('model_name')}")
         return cls._model_services[provider](**kwargs)
         
     @classmethod

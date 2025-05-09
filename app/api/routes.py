@@ -175,11 +175,13 @@ async def _get_complete_response(mcp_handler, mcp_request):
                 response_content += chunk['message']['content']
         if error:
             return {"error": error}
+        from app.core.config import get_settings
+        settings = get_settings()
         return {
             "id": f"chatcmpl-{uuid.uuid4()}",
             "object": "chat.completion",
             "created": int(time.time()),
-            "model": mcp_request.get('model', 'unknown'),
+            "model": settings.VERTEX_MODEL_NAME,
             "choices": [
                 {
                     "message": {
