@@ -18,9 +18,6 @@ class VertexAIService:
             region: Google Cloud region
             model_name: Name of the Vertex AI model
         """
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"VertexAIService: Initialized with model_name={model_name}")
         self.project_id = project_id
         self.region = region
         self.model_name = model_name
