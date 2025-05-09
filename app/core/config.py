@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     GCP_PROJECT_ID: str
     GCP_REGION: str = "us-central1"
     GCP_SERVICE_ACCOUNT_KEY: str = "credentials/vertex-ai-key.json"
-    VERTEX_MODEL_NAME: str = "gemini-2.5-pro-preview-03-25"
+    VERTEX_MODEL_NAME: str = "gemini-2.5-pro-preview-05-06"
     
     # Security and CORS
     CORS_ORIGINS: List[str] = ["*"]

@@ -13,7 +13,7 @@ class GeminiMCPHandler:
         self.model_service = model_service
     
     async def handle_request(self, request: Dict[str, Any]) -> AsyncGenerator[Dict[str, Any], None]:
-        """Process MCP request and generate responses (streaming)."""
+        """Process MCP request and generate responses (streaming). Supports Google Search grounding via 'grounding' or 'tools' in the request."""
         try:
             logger.info(f"Processing MCP request for model: {request.get('model')}")
 
@@ -21,11 +21,20 @@ class GeminiMCPHandler:
             mcp_messages = self._convert_to_sampling_messages(request.get('messages', []))
             generation_config = self._extract_generation_config(request.get('parameters', {}))
 
+            # Determine tools for grounding
+            tools = None
+            # Prefer tools param if provided
+            if 'tools' in request and isinstance(request['tools'], list):
+                tools = request['tools']
+            elif request.get('grounding') == 'google_search':
+                tools = [{"tool": "google_search"}]
+
             # Get response from Vertex AI
             async for chunk in self.model_service.generate_content(
                 messages=mcp_messages,
                 generation_config=generation_config,
-                stream=True
+                stream=True,
+                tools=tools
             ):
                 # Convert Vertex AI response to OpenAI/MCP-like dict
                 mcp_response = self._convert_to_mcp_response(chunk)
