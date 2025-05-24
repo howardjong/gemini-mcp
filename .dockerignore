@@ -38,3 +38,7 @@ credentials/
 .idea/
 .vscode/
 **/site-packages/
+
+# Claude Code specific files
+CLAUDE.md
+.claude/

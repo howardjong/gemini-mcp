@@ -127,3 +127,7 @@ ENV/
 
 # Ignore notebook checkpoints
 .ipynb_checkpoints/
+
+# Claude Code specific files
+CLAUDE.md
+.claude/

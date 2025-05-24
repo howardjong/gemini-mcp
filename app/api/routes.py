@@ -9,7 +9,7 @@ from typing import Dict, Any, List, Optional
 from app.api.models import MCPRequest, ModelInfoResponse, ErrorResponse
 from app.core.config import get_settings
 from app.mcp.protocol import GeminiMCPHandler
-from app.services.vertex_service import VertexAIService
+from app.services.vertex_service import VertexService as VertexAIService
 from app.core.rate_limiter import RateLimiter
 
 router = APIRouter(prefix="/v1")
@@ -17,12 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Dependency injection
 async def get_vertex_service() -> VertexAIService:
-    settings = get_settings()
-    return VertexAIService(
-        project_id=settings.GCP_PROJECT_ID,
-        region=settings.GCP_REGION,
-        model_name=settings.VERTEX_MODEL_NAME
-    )
+    return VertexAIService()
 
 async def get_mcp_handler(
     vertex_service: VertexAIService = Depends(get_vertex_service)
@@ -33,7 +28,7 @@ async def get_mcp_handler(
 async def list_models(vertex_service: VertexAIService = Depends(get_vertex_service)):
     """List available models"""
     try:
-        models = await vertex_service.list_models()
+        models = await vertex_service.list_available_models()
         return [
             ModelInfoResponse(
                 id=model,
@@ -117,31 +112,6 @@ async def chat_completions_model(
         logger.error(f"Error in chat completions (model in path): {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
 
-    """Handle chat completions with MCP"""
-    try:
-        # Parse request body
-        body = await request.json()
-        
-        # Convert to MCP Request format
-        mcp_request = await _convert_to_mcp_request(body)
-        
-        # Handle streaming vs non-streaming
-        stream = body.get("stream", False)
-        
-        if stream:
-            # Return streaming response
-            return StreamingResponse(
-                _stream_mcp_response(mcp_handler, mcp_request),
-                media_type="text/event-stream"
-            )
-        else:
-            # Return complete response
-            response = await _get_complete_response(mcp_handler, mcp_request)
-            return response
-            
-    except Exception as e:
-        logger.error(f"Error in chat completions: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
 
 async def _convert_to_mcp_request(body: Dict[str, Any]):
     """For the new MCP SDK, just return the request body as-is (dict)."""
@@ -151,7 +121,7 @@ async def _convert_to_mcp_request(body: Dict[str, Any]):
 async def _stream_mcp_response(mcp_handler, mcp_request):
     """Stream responses from MCP handler (dict-based)."""
     try:
-        async for response in mcp_handler.handle_request(mcp_request):
+        async for response in mcp_handler.handle_request(mcp_request, stream=True):
             if 'error' in response:
                 yield f"data: {json.dumps({'error': response['error']})}\n\n"
                 return
@@ -167,7 +137,7 @@ async def _get_complete_response(mcp_handler, mcp_request):
     response_content = ""
     error = None
     try:
-        async for chunk in mcp_handler.handle_request(mcp_request):
+        async for chunk in mcp_handler.handle_request(mcp_request, stream=False):
             if 'error' in chunk:
                 error = chunk['error']
                 break
