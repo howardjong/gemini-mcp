@@ -124,30 +124,79 @@ class GeminiMCPHandler:
     def _convert_to_mcp_response(self, vertex_chunk: Any) -> Dict[str, Any]:
         """Convert Vertex AI response chunk to MCP-like response dict."""
         try:
-            # Error handling
-            if hasattr(vertex_chunk, 'error') or (isinstance(vertex_chunk, dict) and 'error' in vertex_chunk):
-                error_msg = str(vertex_chunk.get('error', 'Unknown error')) if isinstance(vertex_chunk, dict) else str(vertex_chunk.error)
-                return {"error": {"type": "model_error", "message": error_msg}}
-            # Extract text content from various Vertex AI response formats
-            text_content = ""
+            # Handle OpenAI-formatted chunks (which is what our Vertex service returns)
+            if isinstance(vertex_chunk, dict):
+                # If it's already an OpenAI-formatted chunk, extract the content
+                if 'choices' in vertex_chunk:
+                    choices = vertex_chunk['choices']
+                    if choices and len(choices) > 0:
+                        choice = choices[0]
+                        if 'delta' in choice and 'content' in choice['delta']:
+                            content = choice['delta']['content']
+                            return {
+                                "message": {
+                                    "role": "assistant",
+                                    "content": content
+                                }
+                            }
+                        elif 'message' in choice and 'content' in choice['message']:
+                            content = choice['message']['content']
+                            return {
+                                "message": {
+                                    "role": "assistant",
+                                    "content": content
+                                }
+                            }
+                
+                # Handle error responses
+                if 'error' in vertex_chunk:
+                    error_msg = str(vertex_chunk['error'])
+                    return {"error": {"type": "model_error", "message": error_msg}}
+                
+                # Handle direct text content
+                if 'text' in vertex_chunk:
+                    return {
+                        "message": {
+                            "role": "assistant",
+                            "content": vertex_chunk['text']
+                        }
+                    }
+                
+                # Handle raw Vertex AI response format (fallback)
+                if 'candidates' in vertex_chunk:
+                    text_content = ""
+                    for candidate in vertex_chunk['candidates']:
+                        if 'content' in candidate:
+                            content = candidate['content']
+                            if isinstance(content, dict) and 'parts' in content:
+                                for part in content['parts']:
+                                    if 'text' in part:
+                                        text_content += part['text']
+                    return {
+                        "message": {
+                            "role": "assistant",
+                            "content": text_content
+                        }
+                    }
+            
+            # Handle direct text responses
             if hasattr(vertex_chunk, 'text'):
-                text_content = vertex_chunk.text
-            elif isinstance(vertex_chunk, dict) and 'candidates' in vertex_chunk:
-                for candidate in vertex_chunk['candidates']:
-                    if 'content' in candidate:
-                        content = candidate['content']
-                        if isinstance(content, dict) and 'parts' in content:
-                            for part in content['parts']:
-                                if 'text' in part:
-                                    text_content += part['text']
-            elif isinstance(vertex_chunk, dict) and 'text' in vertex_chunk:
-                text_content = vertex_chunk['text']
+                return {
+                    "message": {
+                        "role": "assistant",
+                        "content": vertex_chunk.text
+                    }
+                }
+            
+            # If we can't parse it, return empty content
+            logger.warning(f"Unable to parse chunk format: {type(vertex_chunk)}, content: {vertex_chunk}")
             return {
                 "message": {
                     "role": "assistant",
-                    "content": text_content
+                    "content": ""
                 }
             }
+            
         except Exception as e:
             logger.error(f"Error converting Vertex AI response: {str(e)}")
             return {"error": {"type": "conversion_error", "message": str(e)}}

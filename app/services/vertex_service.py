@@ -153,19 +153,29 @@ class VertexService:
             response_stream = await loop.run_in_executor(None, generate_stream)
             
             for chunk in response_stream:
-                # Format chunk in OpenAI-compatible format
-                yield {
-                    "id": f"chatcmpl-{asyncio.current_task().get_name()}",
-                    "object": "chat.completion.chunk",
-                    "model": model_kwargs["model"],
-                    "choices": [{
-                        "index": 0,
-                        "delta": {
-                            "content": self._extract_text_from_chunk(chunk)
-                        },
-                        "finish_reason": None
-                    }]
-                }
+                try:
+                    # Extract text content with debug logging
+                    content = self._extract_text_from_chunk(chunk)
+                    logger.debug(f"Extracted content from chunk: {content}")
+                    
+                    # Format chunk in OpenAI-compatible format
+                    yield {
+                        "id": f"chatcmpl-{asyncio.current_task().get_name()}",
+                        "object": "chat.completion.chunk",
+                        "model": model_kwargs["model"],
+                        "choices": [{
+                            "index": 0,
+                            "delta": {
+                                "content": content
+                            },
+                            "finish_reason": None
+                        }]
+                    }
+                except Exception as e:
+                    logger.error(f"Error processing chunk: {str(e)}")
+                    logger.error(f"Chunk type: {type(chunk)}")
+                    logger.error(f"Chunk content: {chunk}")
+                    raise
             
             # Send final chunk with finish_reason
             yield {
@@ -243,6 +253,11 @@ class VertexService:
     def _extract_text_from_chunk(self, chunk) -> str:
         """Extract text content from streaming chunk"""
         try:
+            # Try to access the text directly first (newer SDK versions)
+            if hasattr(chunk, 'text'):
+                return chunk.text or ""
+                
+            # Fallback to candidates structure (older SDK versions)
             if hasattr(chunk, 'candidates') and chunk.candidates:
                 candidate = chunk.candidates[0]
                 if hasattr(candidate, 'content') and hasattr(candidate.content, 'parts'):
@@ -252,7 +267,15 @@ class VertexService:
                         if hasattr(part, 'text'):
                             text_parts.append(part.text)
                     return ''.join(text_parts)
+                elif hasattr(candidate, 'content') and hasattr(candidate.content, 'text'):
+                    return candidate.content.text or ""
             
+            # Try to get text from chunk directly as a string
+            if isinstance(chunk, str):
+                return chunk
+                
+            # Debug logging for unexpected chunk format
+            logger.warning(f"Unexpected chunk format: {chunk}")
             return ""
             
         except Exception as e:
