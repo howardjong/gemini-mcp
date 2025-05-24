@@ -126,27 +126,35 @@ class GeminiMCPHandler:
         try:
             # Handle OpenAI-formatted chunks (which is what our Vertex service returns)
             if isinstance(vertex_chunk, dict):
-                # If it's already an OpenAI-formatted chunk, extract the content
-                if 'choices' in vertex_chunk:
-                    choices = vertex_chunk['choices']
-                    if choices and len(choices) > 0:
-                        choice = choices[0]
-                        if 'delta' in choice and 'content' in choice['delta']:
-                            content = choice['delta']['content']
-                            return {
-                                "message": {
-                                    "role": "assistant",
-                                    "content": content
-                                }
+                # Handle final chunk with finish_reason
+                if 'choices' in vertex_chunk and vertex_chunk['choices']:
+                    choice = vertex_chunk['choices'][0]
+                    # Handle final chunk with finish_reason
+                    if 'finish_reason' in choice and choice['finish_reason'] == 'stop':
+                        return {
+                            "message": {
+                                "role": "assistant",
+                                "content": ""
+                            },
+                            "finish_reason": "stop"
+                        }
+                    # Handle streaming content chunks
+                    if 'delta' in choice and 'content' in choice['delta']:
+                        content = choice['delta']['content']
+                        return {
+                            "message": {
+                                "role": "assistant",
+                                "content": content
                             }
-                        elif 'message' in choice and 'content' in choice['message']:
-                            content = choice['message']['content']
-                            return {
-                                "message": {
-                                    "role": "assistant",
-                                    "content": content
-                                }
+                        }
+                    elif 'message' in choice and 'content' in choice['message']:
+                        content = choice['message']['content']
+                        return {
+                            "message": {
+                                "role": "assistant",
+                                "content": content
                             }
+                        }
                 
                 # Handle error responses
                 if 'error' in vertex_chunk:
@@ -188,7 +196,7 @@ class GeminiMCPHandler:
                     }
                 }
             
-            # If we can't parse it, return empty content
+            # If we can't parse it, log and return empty content
             logger.warning(f"Unable to parse chunk format: {type(vertex_chunk)}, content: {vertex_chunk}")
             return {
                 "message": {
