@@ -4,13 +4,13 @@ A **REST API server** providing OpenAI-compatible chat completions for Google's 
 
 ## Features
 
-- ✅ **OpenAI Compatible**: Drop-in replacement for OpenAI chat completions API
-- 🚀 **FastAPI**: High-performance async API with automatic docs
-- 🤖 **Gemini Integration**: Latest Gemini 2.5 Pro via Vertex AI  
-- 🔒 **Rate Limiting**: Built-in request rate limiting
-- 📊 **Streaming**: Real-time response streaming support
-- 🐳 **Docker Ready**: Production-ready containerization
-- 📝 **Auto Docs**: Interactive API documentation at `/docs`
+- **OpenAI Compatible**: Drop-in replacement for OpenAI chat completions API
+- **FastAPI**: High-performance async API with automatic docs
+- **Gemini Integration**: Latest Gemini 2.5 Pro via Vertex AI  
+- **Rate Limiting**: Built-in request rate limiting
+- **Streaming**: Real-time response streaming support
+- **Docker Ready**: Production-ready containerization
+- **Auto Docs**: Interactive API documentation at `/docs`
 
 ## Architecture
 
@@ -138,6 +138,51 @@ curl -X POST https://your-app.onrender.com/v1/chat/completions \
   }'
 ```
 
+### Streaming Example
+```bash
+# Stream responses in real-time
+curl -X POST https://your-app.onrender.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemini-2.5-pro-preview-05-06",
+    "messages": [
+      {"role": "user", "content": "Tell me a story"}
+    ],
+    "stream": true
+  }'
+```
+
+```python
+# Python streaming example
+import requests
+
+response = requests.post("https://your-app.onrender.com/v1/chat/completions",
+    json={
+        "model": "gemini-2.5-pro-preview-05-06",
+        "messages": [{"role": "user", "content": "Tell me a story"}],
+        "stream": True
+    },
+    stream=True
+)
+
+for line in response.iter_lines():
+    if line:
+        print(line.decode('utf-8'))
+```
+
+## Troubleshooting
+
+### Common Issues
+
+- **Rate Limiting**: If you encounter rate limiting errors, check your `RATE_LIMIT_RPM` environment variable and adjust as needed.
+- **Model Not Found**: Ensure that the `VERTEX_MODEL_NAME` environment variable is set correctly and that the model exists in your Vertex AI project.
+- **Authentication Errors**: Verify that your service account key is correctly configured and that the `GCP_SERVICE_ACCOUNT_KEY` environment variable is set.
+
+### Debugging
+
+- **Enable Debug Mode**: Set `DEBUG=true` in your `.env` file to enable debug logging.
+- **Check Server Logs**: Inspect server logs for error messages and stack traces.
+
 ## OpenAI Compatibility
 
 This server provides OpenAI-compatible endpoints, making it a drop-in replacement for OpenAI's API when using Gemini models via Vertex AI.
@@ -174,6 +219,6 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
-- 📖 [MCP Documentation](https://modelcontextprotocol.io)
-- 🐛 [Report Issues](https://github.com/howardjong/gemini-mcp/issues)
-- 💬 [Discussions](https://github.com/howardjong/gemini-mcp/discussions)
+- [MCP Documentation](https://modelcontextprotocol.io)
+- [Report Issues](https://github.com/howardjong/gemini-mcp/issues)
+- [Discussions](https://github.com/howardjong/gemini-mcp/discussions)
